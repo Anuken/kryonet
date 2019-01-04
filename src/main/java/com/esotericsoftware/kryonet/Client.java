@@ -529,20 +529,22 @@ public class Client extends Connection implements EndPoint{
         return serialization;
     }
 
-    private void broadcast(int udpPort, DatagramSocket socket)
-    throws IOException{
+    private void broadcast(int udpPort, DatagramSocket socket) throws IOException{
         ByteBuffer dataBuffer = ByteBuffer.allocate(64);
         serialization.write(dataBuffer, new DiscoverHost());
         dataBuffer.flip();
         byte[] data = new byte[dataBuffer.limit()];
         dataBuffer.get(data);
-        for(NetworkInterface iface : Collections
-        .list(NetworkInterface.getNetworkInterfaces())){
-            for(InetAddress address : Collections
-            .list(iface.getInetAddresses())){
+        for(NetworkInterface iface : Collections.list(NetworkInterface.getNetworkInterfaces())){
+            for(InetAddress address : Collections.list(iface.getInetAddresses())){
                 // Java 1.5 doesn't support getting the subnet mask, so try the
                 // two most common.
-                byte[] ip = address.getAddress();
+                byte[] ip = address.getAddress(); // 255.255.255.255
+                try{
+                    socket.send(new DatagramPacket(data, data.length,
+                    InetAddress.getByAddress(ip), udpPort));
+                }catch(Exception ignored){
+                }
                 ip[3] = -1; // 255.255.255.0
                 try{
                     socket.send(new DatagramPacket(data, data.length,
